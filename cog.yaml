@@ -39,6 +39,7 @@ build:
     - "pip install --no-cache-dir uvicorn==0.30.0"
     - "pip install --no-cache-dir fastapi==0.111.0 fastapi-cli==0.0.4"
     - "pip install --no-cache-dir WeTextProcessing==1.0.3"
+    - "pydantic>=1.10.0,<2.0.0"  # Pin to V1
 
   system_packages:
     - "ffmpeg"
