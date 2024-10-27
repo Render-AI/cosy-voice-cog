@@ -3,9 +3,15 @@ build:
   cuda: "11.8"
   python_version: "3.9"
   run:
-    # Print working directory and contents before any operations
-    - "echo 'Current directory:' && pwd"
-    - "echo 'Directory contents:' && ls -la"
+    # Force output buffering and use strong echo commands
+    - "/bin/bash -c 'echo \"===== CURRENT DIRECTORY =====\"'"
+    - "/bin/bash -c 'pwd'"
+    - "/bin/bash -c 'echo \"===== DIRECTORY CONTENTS =====\"'"
+    - "/bin/bash -c 'ls -la /'"
+    - "/bin/bash -c 'echo \"===== WORKSPACE CONTENTS =====\"'"
+    - "/bin/bash -c 'ls -la .'"
+    - "/bin/bash -c 'echo \"===== SOURCE DIRECTORY =====\"'"
+    - "/bin/bash -c 'ls -la /src || echo \"No /src directory\"'"
     # Create directory structure with parents
     - "mkdir -p /src/third_party/Matcha-TTS"
     # Use safer copy syntax with error handling
