@@ -44,7 +44,7 @@ build:
     - "export PYTHONPATH=$PYTHONPATH:/src/third_party/Matcha-TTS"
 
     # Install Pydantic v1 and compatible FastAPI version first
-    - "pip install --no-cache-dir 'pydantic>=1.10.0,<1.5.0'"
+    - "pip install --no-cache-dir 'pydantic==1.10.0'"
 
   system_packages:
     - "ffmpeg"
