@@ -3,15 +3,7 @@ build:
   cuda: "11.8"
   python_version: "3.9"
   run:
-    - "/bin/bash -c 'echo \"===== CURRENT DIRECTORY =====\" && pwd && sleep 5'"
-    - "/bin/bash -c 'echo \"===== DIRECTORY CONTENTS =====\" && ls -la && sleep 5'"
-    - "/bin/bash -c 'echo \"===== ROOT DIRECTORY =====\" && ls -la / && sleep 5'"
-    - "/bin/bash -c 'echo \"===== SRC DIRECTORY =====\" && ls -la /src || echo \"No /src directory\" && sleep 5'"
-    - "/bin/bash -c 'echo \"===== THIRD_PARTY DIRECTORY =====\" && ls -la /third_party || echo \"No /third_party directory\" && sleep 5'"
-    # Create directory structure with parents
-    - "mkdir -p /src/third_party/Matcha-TTS"
-    # Use safer copy syntax with error handling
-    - "if [ -d 'third_party/Matcha-TTS' ]; then cp -rv third_party/Matcha-TTS/* /src/third_party/Matcha-TTS/; else echo 'Source directory not found'; fi"
+    - "pip install git+https://github.com/shivammehta25/Matcha-TTS.git"
   system_packages:
     - "ffmpeg"
     - "libsox-dev"
@@ -20,6 +12,7 @@ build:
     - "--extra-index-url https://download.pytorch.org/whl/cu118"
     - "torch==2.0.1"
     - "torchaudio==2.0.2"
+    - "transformers"
     - "conformer==0.3.2"
     - "deepspeed==0.14.2"
     - "diffusers==0.27.2"
