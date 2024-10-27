@@ -5,18 +5,14 @@ build:
   run:
     # Update pip first
     - "pip install --upgrade pip setuptools wheel"
-  
-    # Install Matcha-TTS last
-    - "git clone https://github.com/shivammehta25/Matcha-TTS.git /src/third_party/Matcha-TTS"
-    - "cd /src/third_party/Matcha-TTS && pip install --no-deps ."
-    - "cd /src/third_party/Matcha-TTS && pip install -r requirements.txt"
     
-    # Install PyTorch and torchaudio first
+    # Install Pydantic v1 and compatible FastAPI version first
+    - "pip install --no-cache-dir 'pydantic>=1.10.0,<2.0.0'"
+    - "pip install --no-cache-dir 'fastapi<0.100.0'"  # This version uses Pydantic V1
+    
+    # Install PyTorch and torchaudio
     - "pip install --no-cache-dir torch==2.0.1+cu118 --extra-index-url https://download.pytorch.org/whl/cu118"
     - "pip install --no-cache-dir torchaudio==2.0.2 --extra-index-url https://download.pytorch.org/whl/cu118"
-    
-    # Install Pydantic v1
-    - "pip install --no-cache-dir 'pydantic>=1.10.0,<2.0.0'"
     
     # Rest of the packages
     - "pip install --no-cache-dir 'numpy<2' 'setuptools>=65.5.1'"
@@ -37,9 +33,13 @@ build:
     - "pip install --no-cache-dir rich==13.7.1 soundfile==0.12.1"
     - "pip install --no-cache-dir tensorboard==2.14.0"
     - "pip install --no-cache-dir uvicorn==0.30.0"
-    - "pip install --no-cache-dir fastapi==0.111.0 fastapi-cli==0.0.4"
+    - "pip install --no-cache-dir fastapi-cli==0.0.4"
     - "pip install --no-cache-dir WeTextProcessing==1.0.3"
-    - "pydantic>=1.10.0,<2.0.0"  # Pin to V1
+    
+    # Install Matcha-TTS last
+    - "git clone https://github.com/shivammehta25/Matcha-TTS.git /src/third_party/Matcha-TTS"
+    - "cd /src/third_party/Matcha-TTS && pip install --no-deps ."
+    - "cd /src/third_party/Matcha-TTS && pip install -r requirements.txt"
 
   system_packages:
     - "ffmpeg"
