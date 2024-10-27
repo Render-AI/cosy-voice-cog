@@ -18,8 +18,10 @@ build:
     # Set PYTHONPATH
     - "export PYTHONPATH=$PYTHONPATH:/src/third_party/Matcha-TTS"
 
-    # Install PyTorch ecosystem together to ensure compatibility
-    - "pip install --no-cache-dir torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118"
+    # Install PyTorch ecosystem with specific versions to ensure compatibility
+    - "pip install torch==2.0.1+cu118 torchvision==0.15.2 --extra-index-url https://download.pytorch.org/whl/cu118"
+    - "pip install torchaudio==2.0.2 --extra-index-url https://download.pytorch.org/whl/cu118"
+    
     
     
     # Install base requirements common to both projects
@@ -41,10 +43,9 @@ build:
     - "pip install --no-cache-dir openai-whisper==20231117"
     - "pip install --no-cache-dir protobuf==4.25 soundfile==0.12.1"
     - "pip install --no-cache-dir uvicorn==0.30.0"
-    - "pip install --no-cache-dir fastapi-cli==0.0.4"
     - "pip install --no-cache-dir WeTextProcessing==1.0.3"
 
-    # Install Pydantic v1 and compatible FastAPI version first
+    # Install Pydantic v1
     - "pip install --no-cache-dir 'pydantic==1.10.0'"
 
   system_packages:
