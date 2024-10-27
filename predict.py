@@ -8,11 +8,13 @@ import logging
 import time
 from typing import Optional
 
+# Correct imports matching the exact case of the folder
+from cosyvoice.cli.cosyvoice import CosyVoice
+from cosyvoice.utils.file_utils import load_wav
+
 class Predictor(BasePredictor):
     def setup(self):
         """Load the model into memory and set up required components"""
-        from cosyvoice.cli.cosyvoice import CosyVoice
-        
         print("Starting model loading...")
         total_start = time.time()
         
@@ -45,8 +47,7 @@ class Predictor(BasePredictor):
         start = time.time()
         self.available_speakers = self.sft_model.list_avaliable_spks()
         print(f"Got available speakers in {time.time() - start:.2f} seconds")
-        print('available speakers: ', self.available_speakers)
-
+        
         total_time = time.time() - total_start
         print(f"\nTotal setup time: {total_time:.2f} seconds")
 
@@ -116,7 +117,6 @@ class Predictor(BasePredictor):
             if info.sample_rate < self.prompt_sr:
                 raise ValueError(f"Reference audio sample rate {info.sample_rate} is lower than required {self.prompt_sr}")
             
-            from cosyvoice.utils.file_utils import load_wav
             reference_speech = load_wav(str(reference_audio), self.prompt_sr)
 
         # Generate audio based on mode
