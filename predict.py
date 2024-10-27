@@ -9,8 +9,8 @@ import time
 from typing import Optional
 
 # Correct imports matching the exact case of the folder
-from cosyvoicee.cli.cosyvoice import CosyVoice
-from cosyvoicee.utils.file_utils import load_wav
+from cosyvoice.cli.cosyvoice import CosyVoice
+from cosyvoice.utils.file_utils import load_wav
 
 class Predictor(BasePredictor):
     def setup(self):
