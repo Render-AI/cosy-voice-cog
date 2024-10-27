@@ -2,14 +2,18 @@ build:
   gpu: true
   cuda: "11.8"
   python_version: "3.9"
+  run:
+    - pwd  # Print current working directory
+    - ls -la  # List all files in current directory
+    - echo "Listing third_party directory:"
+    - ls -la third_party || echo "third_party not found"
+    - mkdir -p /src/third_party/Matcha-TTS
+    - cp -r third_party/Matcha-TTS/* /src/third_party/Matcha-TTS/
+    - pip install -e /src/third_party/Matcha-TTS
   system_packages:
     - "ffmpeg"
     - "libsox-dev"
     - "sox"
-  run:
-    - mkdir -p /src/third_party/Matcha-TTS
-    - cp -r third_party/Matcha-TTS/* /src/third_party/Matcha-TTS/
-    - pip install -e /src/third_party/Matcha-TTS
   python_packages:
     - "--extra-index-url https://download.pytorch.org/whl/cu118"
     - "torch==2.0.1"
