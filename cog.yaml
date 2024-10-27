@@ -7,7 +7,8 @@ build:
     - "libsox-dev"
     - "sox"
   run:
-    - cd third_party/Matcha-TTS && pip install -e .
+    - COPY third_party/Matcha-TTS /src/third_party/Matcha-TTS
+    - pip install -e /src/third_party/Matcha-TTS
   python_packages:
     - "--extra-index-url https://download.pytorch.org/whl/cu118"
     - "torch==2.0.1"
