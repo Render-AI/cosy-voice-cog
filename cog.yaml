@@ -39,5 +39,7 @@ build:
     - "fastapi==0.111.0"
     - "fastapi-cli==0.0.4"
     - "WeTextProcessing==1.0.3"
+  run:
+    - cd third_party/Matcha-TTS && pip install -e .
 
 predict: "predict.py:Predictor"
