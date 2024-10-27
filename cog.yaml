@@ -6,6 +6,8 @@ build:
     - "ffmpeg"
     - "libsox-dev"
     - "sox"
+  run:
+    - cd third_party/Matcha-TTS && pip install -e .
   python_packages:
     - "--extra-index-url https://download.pytorch.org/whl/cu118"
     - "torch==2.0.1"
@@ -39,7 +41,5 @@ build:
     - "fastapi==0.111.0"
     - "fastapi-cli==0.0.4"
     - "WeTextProcessing==1.0.3"
-  run:
-    - cd third_party/Matcha-TTS && pip install -e .
 
 predict: "predict.py:Predictor"
