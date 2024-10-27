@@ -6,10 +6,6 @@ build:
     # Update pip first
     - "pip install --upgrade pip setuptools wheel"
     
-    # Install Pydantic v1 and compatible FastAPI version first
-    - "pip install --no-cache-dir 'pydantic>=1.10.0,<2.0.0'"
-    - "pip install --no-cache-dir 'fastapi<0.100.0'"
-    
     # Install PyTorch ecosystem
     - "pip install --no-cache-dir torch==2.0.1+cu118 torchvision>=0.15.0 torchaudio==2.0.2 --extra-index-url https://download.pytorch.org/whl/cu118"
     
@@ -46,6 +42,9 @@ build:
     
     # Set PYTHONPATH
     - "export PYTHONPATH=$PYTHONPATH:/src/third_party/Matcha-TTS"
+
+    # Install Pydantic v1 and compatible FastAPI version first
+    - "pip install --no-cache-dir 'pydantic<=1.10.0"
 
   system_packages:
     - "ffmpeg"
