@@ -13,6 +13,21 @@ class Predictor(BasePredictor):
     def setup(self):
         """Load the model into memory and set up directories"""
         print("Starting setup...")
+
+        # Get current directory and list its contents
+        current_dir = os.getcwd()
+        print(f"\nCurrent working directory: {current_dir}")
+        print("\nListing all directories and their contents:")
+        
+        for root, dirs, files in os.walk(current_dir):
+            level = root.replace(current_dir, '').count(os.sep)
+            indent = ' ' * 4 * level
+            print(f"{indent}{os.path.basename(root)}/")
+            subindent = ' ' * 4 * (level + 1)
+            for d in dirs:
+                print(f"{subindent}{d}/")
+            for f in files:
+                print(f"{subindent}{f}")
         
         # Create necessary directories
         directories = [
