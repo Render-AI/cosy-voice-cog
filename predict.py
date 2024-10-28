@@ -2,140 +2,139 @@ from cog import BasePredictor, Input, Path
 import torch
 import torchaudio
 import os
+import shutil
 import numpy as np
-import random
-import logging
-import time
 from typing import Optional
-
-# Correct imports matching the exact case of the folder
 from cosyvoice.cli.cosyvoice import CosyVoice
 from cosyvoice.utils.file_utils import load_wav
+from modelscope import snapshot_download
 
 class Predictor(BasePredictor):
     def setup(self):
-        """Load the model into memory and set up required components"""
-        print("Starting model loading...")
-        total_start = time.time()
+        """Load the model into memory and set up directories"""
+        print("Starting setup...")
         
-        # Use local model paths from pretrained_models directory
-        base_model_path = "pretrained_models/CosyVoice-300M"
-        sft_model_path = "pretrained_models/CosyVoice-300M-SFT"
-        instruct_model_path = "pretrained_models/CosyVoice-300M-Instruct"
+        # Create necessary directories
+        directories = [
+            'pretrained_models',
+            '/tmp',
+            'pretrained_models/CosyVoice-300M'
+        ]
         
-        # Initialize models using local paths
-        print("\nLoading base model...")
-        start = time.time()
-        self.base_model = CosyVoice(base_model_path)
-        print(f"Base model loaded in {time.time() - start:.2f} seconds")
+        for directory in directories:
+            if not os.path.exists(directory):
+                print(f"Creating directory: {directory}")
+                os.makedirs(directory, exist_ok=True)
         
-        print("\nLoading SFT model...")
-        start = time.time()
-        self.sft_model = CosyVoice(sft_model_path)
-        print(f"SFT model loaded in {time.time() - start:.2f} seconds")
+        # Download base model if it doesn't exist or is empty
+        model_path = 'pretrained_models/CosyVoice-300M'
+        if not os.path.exists(model_path) or len(os.listdir(model_path)) == 0:
+            print("\nDownloading CosyVoice-300M...")
+            # If directory exists but is empty, remove it first
+            if os.path.exists(model_path):
+                shutil.rmtree(model_path)
+                os.makedirs(model_path)
+            snapshot_download('iic/CosyVoice-300M', local_dir=model_path)
+            print("Download completed")
+        else:
+            print("\nModel already exists in pretrained_models/CosyVoice-300M")
         
-        print("\nLoading instruct model...")
-        start = time.time()
-        self.instruct_model = CosyVoice(instruct_model_path)
-        print(f"Instruct model loaded in {time.time() - start:.2f} seconds")
-        
+        # Initialize model
+        print("\nLoading model...")
+        self.model = CosyVoice(model_path)
         self.prompt_sr = 16000
         self.target_sr = 22050
-        
-        # Get available speakers from SFT model
-        print("\nGetting available speakers...")
-        start = time.time()
-        self.available_speakers = self.sft_model.list_avaliable_spks()
-        print(f"Got available speakers in {time.time() - start:.2f} seconds")
-        
-        total_time = time.time() - total_start
-        print(f"\nTotal setup time: {total_time:.2f} seconds")
-
-    def set_random_seed(self, seed):
-        """Set random seed for reproducibility"""
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
+        print("Model loaded successfully")
 
     def predict(
         self,
         mode: str = Input(
-            choices=["sft", "zero_shot", "cross_lingual", "instruct"],
+            choices=["zero_shot", "cross_lingual", "voice_conversion"],
             default="zero_shot",
-            description="Voice synthesis mode - sft: use pretrained voices, zero_shot: 3-second voice cloning, cross_lingual: cross-language cloning, instruct: personality-driven synthesis"
+            description="Voice synthesis mode"
         ),
         text: str = Input(
-            description="Text to be synthesized",
-            default="Hello, this is a test."
-        ),
-        reference_audio: Path = Input(
-            description="Reference audio file for voice cloning (required for zero_shot and cross_lingual modes)",
+            description="Text to be synthesized (for zero_shot and cross_lingual modes)",
             default=None
         ),
-        reference_text: str = Input(
-            description="Text corresponding to the reference audio (required for zero_shot mode)",
+        prompt_text: str = Input(
+            description="Prompt text corresponding to the prompt audio (for zero_shot mode only)",
             default=None
         ),
-        speaker: str = Input(
-            description="Speaker ID for SFT mode (ignored in other modes)",
+        prompt_audio: Path = Input(
+            description="Prompt audio file (for zero_shot and cross_lingual modes)",
             default=None
         ),
-        instruct_text: str = Input(
-            description="Personality description for instruct mode (e.g., 'passionate, energetic speaker')",
+        source_audio: Path = Input(
+            description="Source audio file for voice conversion",
             default=None
         ),
-        seed: int = Input(
-            description="Random seed for reproducibility",
+        target_audio: Path = Input(
+            description="Target audio file for voice conversion",
             default=None
-        )
+        ),
     ) -> Path:
-        """Run voice synthesis prediction based on selected mode"""
+        """Run voice synthesis prediction"""
         
-        if seed is not None:
-            self.set_random_seed(seed)
-        else:
-            seed = random.randint(1, 100000000)
-            self.set_random_seed(seed)
-
-        # Input validation based on mode
-        if mode in ["zero_shot", "cross_lingual"] and reference_audio is None:
-            raise ValueError(f"Reference audio is required for {mode} mode")
+        # Create output directory if it doesn't exist
+        os.makedirs("/tmp", exist_ok=True)
         
-        if mode == "zero_shot" and not reference_text:
-            raise ValueError("Reference text is required for zero_shot mode")
+        # Input validation
+        if mode in ["zero_shot", "cross_lingual"] and not prompt_audio:
+            raise ValueError(f"Prompt audio is required for {mode} mode")
+        
+        if mode == "zero_shot":
+            if not text or not prompt_text:
+                raise ValueError("Text and prompt text are required for zero_shot mode")
+        
+        if mode == "cross_lingual" and not text:
+            raise ValueError("Text is required for cross_lingual mode")
             
-        if mode == "sft" and not speaker:
-            raise ValueError("Speaker ID is required for sft mode")
-            
-        if mode == "instruct" and not instruct_text:
-            raise ValueError("Instruct text is required for instruct mode")
+        if mode == "voice_conversion":
+            if not source_audio or not target_audio:
+                raise ValueError("Source and target audio are required for voice conversion mode")
 
-        # Process reference audio if provided
-        if reference_audio is not None:
-            info = torchaudio.info(str(reference_audio))
-            if info.sample_rate < self.prompt_sr:
-                raise ValueError(f"Reference audio sample rate {info.sample_rate} is lower than required {self.prompt_sr}")
-            
-            reference_speech = load_wav(str(reference_audio), self.prompt_sr)
-
-        # Generate audio based on mode
+        # Process audio based on mode
         output_path = Path("/tmp/output.wav")
         
-        if mode == "sft":
-            output = self.sft_model.inference_sft(text, speaker)
-        elif mode == "zero_shot":
-            output = self.base_model.inference_zero_shot(text, reference_text, reference_speech)
-        elif mode == "cross_lingual":
-            output = self.base_model.inference_cross_lingual(text, reference_speech)
-        else:  # instruct
-            output = self.instruct_model.inference_instruct(text, speaker, instruct_text)
+        try:
+            if mode == "zero_shot":
+                prompt_speech = load_wav(str(prompt_audio), self.prompt_sr)
+                output = self.model.inference_zero_shot(
+                    text,
+                    prompt_text,
+                    prompt_speech,
+                    stream=False
+                )
+            
+            elif mode == "cross_lingual":
+                prompt_speech = load_wav(str(prompt_audio), self.prompt_sr)
+                output = self.model.inference_cross_lingual(
+                    text,
+                    prompt_speech,
+                    stream=False
+                )
+            
+            else:  # voice_conversion
+                source_speech = load_wav(str(source_audio), self.prompt_sr)
+                target_speech = load_wav(str(target_audio), self.prompt_sr)
+                output = self.model.inference_vc(
+                    source_speech,
+                    target_speech,
+                    stream=False
+                )
 
-        # Save output
-        torchaudio.save(
-            str(output_path),
-            output['tts_speech'],
-            self.target_sr
-        )
-        
-        return output_path
+            # Save output
+            # The models return a generator, so we need to get the first item
+            output_audio = next(output)
+            torchaudio.save(
+                str(output_path),
+                output_audio['tts_speech'],
+                self.target_sr
+            )
+            
+            return output_path
+            
+        except Exception as e:
+            print(f"Error during processing: {str(e)}")
+            raise e
