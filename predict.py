@@ -88,6 +88,12 @@ class Predictor(BasePredictor):
             description="Target audio file for voice conversion",
             default=None
         ),
+        speed: float = Input(
+            description="",
+            default=1.0,
+            ge=0.2
+        ),
+        
     ) -> Path:
         """Run voice synthesis prediction"""
         
@@ -119,7 +125,8 @@ class Predictor(BasePredictor):
                     text,
                     prompt_text,
                     prompt_speech,
-                    stream=False
+                    stream=False,
+                    speed=speed
                 )
             
             elif mode == "cross_lingual":
@@ -127,7 +134,8 @@ class Predictor(BasePredictor):
                 output = self.model.inference_cross_lingual(
                     text,
                     prompt_speech,
-                    stream=False
+                    stream=False,
+                    speed=speed
                 )
             
             else:  # voice_conversion
@@ -136,18 +144,25 @@ class Predictor(BasePredictor):
                 output = self.model.inference_vc(
                     source_speech,
                     target_speech,
-                    stream=False
+                    stream=False,
+                    speed=speed
                 )
 
             # Save output
-            # The models return a generator, so we need to get the first item
-            output_audio = next(output)
+            all_chunks = []
+            for chunk_output in output:
+                all_chunks.append(chunk_output['tts_speech'])
+
+            # Concatenate all chunks along time dimension
+            final_audio = torch.cat(all_chunks, dim=1)
+
+            # Save the complete output
             torchaudio.save(
                 str(output_path),
-                output_audio['tts_speech'],
+                final_audio,
                 self.target_sr
             )
-            
+
             return output_path
             
         except Exception as e:
