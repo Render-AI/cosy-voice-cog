@@ -8,6 +8,7 @@ from typing import Optional
 from cosyvoice.cli.cosyvoice import CosyVoice
 from cosyvoice.utils.file_utils import load_wav
 from modelscope import snapshot_download
+from audio_processor import process_audio_with_timeout
 
 class Predictor(BasePredictor):
     def setup(self):
@@ -89,81 +90,71 @@ class Predictor(BasePredictor):
             default=None
         ),
         speed: float = Input(
-            description="",
+            description="Speech speed factor",
             default=1.0,
             ge=0.2
         ),
-        
+        max_chunk_time: int = Input(
+            description="Maximum time in seconds for processing each chunk",
+            default=30
+        ),
+        use_cpu: bool = Input(
+            description="Force CPU usage instead of GPU",
+            default=False
+        ),
+        use_half_precision: bool = Input(
+            description="Enable FP16 precision for faster processing",
+            default=True
+        ),
+        optimize_memory: bool = Input(
+            description="Enable memory optimizations",
+            default=True
+        ),
     ) -> Path:
         """Run voice synthesis prediction"""
         
         # Create output directory if it doesn't exist
         os.makedirs("/tmp", exist_ok=True)
+        output_path = Path("/tmp/output.wav")
         
         # Input validation
         if mode in ["zero_shot", "cross_lingual"] and not prompt_audio:
             raise ValueError(f"Prompt audio is required for {mode} mode")
         
-        if mode == "zero_shot":
-            if not text or not prompt_text:
-                raise ValueError("Text and prompt text are required for zero_shot mode")
+        if mode == "zero_shot" and (not text or not prompt_text):
+            raise ValueError("Text and prompt text are required for zero_shot mode")
         
         if mode == "cross_lingual" and not text:
             raise ValueError("Text is required for cross_lingual mode")
             
-        if mode == "voice_conversion":
-            if not source_audio or not target_audio:
-                raise ValueError("Source and target audio are required for voice conversion mode")
+        if mode == "voice_conversion" and (not source_audio or not target_audio):
+            raise ValueError("Source and target audio are required for voice conversion mode")
 
-        # Process audio based on mode
-        output_path = Path("/tmp/output.wav")
-        
         try:
-            if mode == "zero_shot":
-                prompt_speech = load_wav(str(prompt_audio), self.prompt_sr)
-                output = self.model.inference_zero_shot(
-                    text,
-                    prompt_text,
-                    prompt_speech,
-                    stream=False,
-                    speed=speed
-                )
+            # Load audio inputs based on mode
+            if mode in ["zero_shot", "cross_lingual"]:
+                prompt_speech_16k = load_wav(str(prompt_audio), self.prompt_sr)
             
-            elif mode == "cross_lingual":
-                prompt_speech = load_wav(str(prompt_audio), self.prompt_sr)
-                output = self.model.inference_cross_lingual(
-                    text,
-                    prompt_speech,
-                    stream=False,
-                    speed=speed
-                )
-            
-            else:  # voice_conversion
-                source_speech = load_wav(str(source_audio), self.prompt_sr)
-                target_speech = load_wav(str(target_audio), self.prompt_sr)
-                output = self.model.inference_vc(
-                    source_speech,
-                    target_speech,
-                    stream=False,
-                    speed=speed
-                )
+            if mode == "voice_conversion":
+                source_speech_16k = load_wav(str(source_audio), self.prompt_sr)
+                prompt_speech_16k = load_wav(str(target_audio), self.prompt_sr)
 
-            # Save output
-            all_chunks = []
-            for chunk_output in output:
-                all_chunks.append(chunk_output['tts_speech'])
-
-            # Concatenate all chunks along time dimension
-            final_audio = torch.cat(all_chunks, dim=1)
-
-            # Save the complete output
-            torchaudio.save(
-                str(output_path),
-                final_audio,
-                self.target_sr
+            # Process audio with timeout handling
+            return process_audio_with_timeout(
+                model=self.model,
+                mode=mode,
+                text=text,
+                prompt_text=prompt_text,
+                prompt_speech_16k=prompt_speech_16k,
+                source_speech_16k=source_speech_16k if mode == "voice_conversion" else None,
+                speed=speed,
+                max_chunk_time=max_chunk_time,
+                output_path=str(output_path),
+                target_sr=self.target_sr,
+                use_cpu=use_cpu,
+                use_half_precision=use_half_precision,
+                optimize_memory=optimize_memory
             )
-
-            return output_path
             
         except Exception as e:
             print(f"Error during processing: {str(e)}")
