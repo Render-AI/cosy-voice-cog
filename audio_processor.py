@@ -6,6 +6,9 @@ import queue
 import os
 from typing import Optional, List, Generator
 
+class ChunkTimeoutError(Exception):
+    pass
+
 def process_audio_with_timeout(
     model,
     mode: str,
