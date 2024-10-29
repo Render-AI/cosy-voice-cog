@@ -139,8 +139,7 @@ class Predictor(BasePredictor):
                 source_speech_16k = load_wav(str(source_audio), self.prompt_sr)
                 prompt_speech_16k = load_wav(str(target_audio), self.prompt_sr)
 
-            # Process audio with timeout handling
-            return process_audio_with_timeout(
+            process_audio_with_timeout(
                 model=self.model,
                 mode=mode,
                 text=text,
@@ -155,6 +154,9 @@ class Predictor(BasePredictor):
                 use_half_precision=use_half_precision,
                 optimize_memory=optimize_memory
             )
+            
+            # Process audio with timeout handling
+            return output_path
             
         except Exception as e:
             print(f"Error during processing: {str(e)}")
